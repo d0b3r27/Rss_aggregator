@@ -9,7 +9,9 @@ const inputRender = (elements, state, processState) => {
       elements.input.classList.remove('is-invalid');
       elements.feedback.textContent = '';
       break;
-  };
+    default:
+      elements.feedback.textContent = 'Неизвестное состояние валидации';
+  }
 };
 
 const formRender = (elements, processState) => {
@@ -28,12 +30,64 @@ const formRender = (elements, processState) => {
       elements.input.value = '';
       elements.input.focus();
       break;
-  };
-}
+    default:
+      elements.feedback.textContent = 'Неизвестное состояние статуса отправки';
+  }
+};
+
+const feedsRender = (elements, data) => {
+  const container = document.createElement('div');
+  container.className = 'card border-0';
+  container.innerHTML = '<div class="card-body"><h2 class="card-title h4">Фиды</h2></div>';
+  const ulOfFeeds = document.createElement('ul');
+  ulOfFeeds.classList.add('list-group', 'border-0', 'rounses-0');
+  data.forEach((feed) => {
+    const li = document.createElement('li');
+    li.className = 'list-group-item border-0 border-end-0';
+    li.innerHTML = `<h3 class="h6 m-0">${feed.title}</h3><p class="m-0 small text-black-50">${feed.description}</p>`;
+    ulOfFeeds.prepend(li);
+  });
+  elements.feeds.innerHTML = '';
+  elements.feeds.append(container);
+  container.append(ulOfFeeds);
+};
+
+const postsRender = (elements, data) => {
+  const container = document.createElement('div');
+  container.className = 'card border-0';
+  container.innerHTML = '<div class="card-body"><h2 class="card-title h4">Посты</h2></div>';
+  const ulOfPosts = document.createElement('ul');
+  ulOfPosts.classList.add('list-group', 'border-0', 'rounded-0');
+  data.forEach((post) => {
+    const li = document.createElement('li');
+    li.className = 'list-group-item d-flex justify-content-between align-items-start border-0 border-end-0';
+
+    const postElement = document.createElement('a');
+    postElement.href = post.link;
+    postElement.className = 'fw-bold';
+    postElement.target = '_blank';
+    postElement.rel = 'noopener noreferrer';
+    postElement.textContent = post.title;
+
+    const previewButton = document.createElement('button');
+    previewButton.type = 'button';
+    previewButton.className = 'btn btn-outline-primary btn-sm';
+    previewButton.dataset.bsToggle = 'modal';
+    previewButton.dataset.bsTarget = '#modal';
+    previewButton.textContent = 'Просмотр';
+
+    li.append(postElement);
+    li.append(previewButton);
+    ulOfPosts.prepend(li);
+  });
+  elements.posts.innerHTML = '';
+  elements.posts.append(container);
+  container.append(ulOfPosts);
+};
 
 export default (elements, state) => (path, value) => {
   switch (path) {
-    case 'form.isValid': 
+    case 'form.isValid':
       inputRender(elements, state, value);
       break;
     case 'form.status':
@@ -48,5 +102,13 @@ export default (elements, state) => (path, value) => {
     case 'parser.data':
       console.log(state.parser.data);
       break;
-  };
+    case 'feeds':
+      feedsRender(elements, value);
+      break;
+    case 'posts':
+      postsRender(elements, value);
+      break;
+    // default:
+    //   elements.feedback.textContent = 'неизвестное состояние State';
+  }
 };
