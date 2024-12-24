@@ -63,6 +63,7 @@ const postsRender = (elements, data) => {
     li.className = 'list-group-item d-flex justify-content-between align-items-start border-0 border-end-0';
 
     const postElement = document.createElement('a');
+    postElement.setAttribute('data-id', post.id);
     postElement.href = post.link;
     postElement.className = 'fw-bold';
     postElement.target = '_blank';
@@ -70,6 +71,7 @@ const postsRender = (elements, data) => {
     postElement.textContent = post.title;
 
     const previewButton = document.createElement('button');
+    previewButton.setAttribute('data-id', post.id);
     previewButton.type = 'button';
     previewButton.className = 'btn btn-outline-primary btn-sm';
     previewButton.dataset.bsToggle = 'modal';
@@ -83,6 +85,13 @@ const postsRender = (elements, data) => {
   elements.posts.innerHTML = '';
   elements.posts.append(container);
   container.append(ulOfPosts);
+};
+
+const modalRender = (elements, state, currentId) => {
+  const currentPost = state.posts.find((post) => post.id === currentId);
+  elements.modalTitle.textContent = currentPost.title;
+  elements.modalBody.textContent = currentPost.description;
+  elements.modalReadButton.href = currentPost.link;
 };
 
 export default (elements, state) => (path, value) => {
@@ -107,6 +116,9 @@ export default (elements, state) => (path, value) => {
       break;
     case 'posts':
       postsRender(elements, value);
+      break;
+    case 'currentId':
+      modalRender(elements, state, value);
       break;
     // default:
     //   elements.feedback.textContent = 'неизвестное состояние State';

@@ -11,7 +11,11 @@ export default () => {
     submitButton: document.querySelector('form button[type="submit"]'),
     feedback: document.querySelector('.feedback'),
     posts: document.querySelector('.posts'),
+    previewButtons: document.querySelectorAll('.posts button'),
     feeds: document.querySelector('.feeds'),
+    modalTitle: document.querySelector('.modal-title'),
+    modalBody: document.querySelector('.modal-body'),
+    modalReadButton: document.querySelector('.full-article'),
   };
 
   const initialState = {
@@ -30,8 +34,8 @@ export default () => {
       error: '',
     },
     posts: [],
+    currentId: '',
     feeds: [],
-    data: '',
   };
 
   // Схема валидации
@@ -88,5 +92,11 @@ export default () => {
           watchedState.form.isValid = false;
         }
       });
+  });
+
+  elements.posts.addEventListener('click', (e) => {
+    if (e.target.tagName === 'BUTTON') {
+      watchedState.currentId = e.target.dataset.id;
+    }
   });
 };

@@ -1,3 +1,5 @@
+import uniqueId from 'lodash.uniqueid';
+
 export default (response) => {
   const parser = new DOMParser();
   const data = parser.parseFromString(response, 'text/xml');
@@ -13,6 +15,7 @@ export default (response) => {
   const channelDescription = channel.querySelector('description')?.textContent || '';
   const channelLink = channel.querySelector('link')?.textContent || '';
   const items = Array.from(channel.querySelectorAll('item')).map((item) => ({
+    id: uniqueId(),
     title: item.querySelector('title')?.textContent || '',
     description: item.querySelector('description')?.textContent || '',
     pubDate: item.querySelector('pubDate')?.textContent || '',
