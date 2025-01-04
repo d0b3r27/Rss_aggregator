@@ -1,7 +1,8 @@
 import * as yup from 'yup';
-import onChange from 'on-change';
 import axios from 'axios';
-import render from './view.js';
+import i18next from 'i18next';
+import resources from './locales/index.js';
+import watcher from './view.js';
 import parser from './parser.js';
 
 export default () => {
@@ -16,87 +17,111 @@ export default () => {
     modalTitle: document.querySelector('.modal-title'),
     modalBody: document.querySelector('.modal-body'),
     modalReadButton: document.querySelector('.full-article'),
+    modalCloseButton: document.querySelector('button.btn-secondary[data-bs-dismiss="modal"]'),
   };
 
   const initialState = {
     form: {
       status: 'filling',
-      url: '',
-      isValid: '',
-      error: '',
+      isValid: 'false',
+      validationError: '',
     },
     loadingProcess: {
       status: 'idle',
       error: '',
     },
     parser: {
-      data: '',
       error: '',
     },
     posts: [],
     currentId: '',
     feeds: [],
+    addedUrls: [],
+    lng: 'ru',
   };
-
-  // Схема валидации
-  const schema = yup
-    .string()
-    .url('Неверный формат URL')
-    .required('URL обязателен');
-    // .test('unique', 'RSS уже существует', (value) => !watchedState.feeds.includes(value));
-
-  // Валидатор
-  const validate = (url) => schema.validate(url)
-    .then(() => true)
-    .catch((error) => error.message);
 
   // Добавление Proxy к URL
   const addProxy = (url) => `https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(url)}`;
 
-  // Запрос с использованием Proxy и парсинг данных в случае успешного запроса
-  const getData = (url) => {
+  // Запрос с использованием Proxy
+  const getData = (url, state) => {
     const proxiedUrl = addProxy(url);
-    watchedState.loadingProcess.status = 'loading';
-    axios.get(proxiedUrl)
+    state.loadingProcess.status = 'loading';
+    return axios.get(proxiedUrl)
       .then((response) => {
-        watchedState.loadingProcess.status = 'succes';
-        try {
-          const data = parser(response.data.contents);
-          watchedState.feeds.push(data.channel);
-          watchedState.posts.push(...data.posts);
-        } catch (parsingError) {
-          watchedState.parser.error = parsingError;
-        }
+        state.loadingProcess.status = 'succes';
+        return response.data.contents;
       })
-      .catch((networkError) => {
-        watchedState.loadingProcess.error = networkError;
-        watchedState.loadingProcess.status = 'error';
+      .then((data) => {
+        state.loadingProcess.status = 'idle';
+        return data;
+      })
+      .catch((error) => {
+        state.loadingProcess.error = error.message;
+        state.loadingProcess.status = 'error';
+        throw error.message;
       });
   };
 
-  const watchedState = onChange(initialState, render(elements, initialState));
+  const i18nextInstatce = i18next.createInstance();
+  i18nextInstatce.init({
+    lng: initialState.lng,
+    resources: resources,
+  })
+    .then(() => {
+      const watchedState = watcher(elements, initialState, i18nextInstatce);
 
-  elements.form.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const formData = new FormData(e.target);
-    const inputValue = formData.get('url');
+      // Схема валидации
+      const schema = yup
+        .string()
+        .url(i18nextInstatce.t('errors.invalidUrl'))
+        .required(i18nextInstatce.t('errors.empty'))
+        .test(
+          'unique-url',
+          i18nextInstatce.t('errors.alreadyExists'),
+          (value) => !watchedState.addedUrls.includes(value),
+        );
 
-    validate(inputValue)
-      .then((validationResult) => {
-        if (validationResult === true) {
-          watchedState.form.isValid = true;
-          watchedState.form.error = '';
-          getData(inputValue);
-        } else {
-          watchedState.form.error = validationResult;
-          watchedState.form.isValid = false;
+      // Валидатор
+      const validate = (url, state) => schema.validate(url)
+        .then(() => {
+          state.form.isValid = true;
+          state.form.validationError = '';
+        })
+        .catch((error) => {
+          state.form.validationError = error.message;
+          state.form.isValid = false;
+          throw error.message;
+        });
+
+      elements.form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const inputValue = formData.get('url');
+        watchedState.form.validationError = '';
+
+        validate(inputValue, watchedState)
+          .then(() => {
+            watchedState.form.status = 'sending';
+            return getData(inputValue, watchedState);
+          })
+          .then((response) => parser(response, watchedState, i18nextInstatce))
+          .then((data) => {
+            watchedState.feeds.push(data.channel);
+            watchedState.posts.push(...data.posts);
+            watchedState.addedUrls.push(inputValue);
+            watchedState.form.status = 'success';
+          })
+          .catch((error) => {
+            watchedState.form.status = 'filling';
+            // watchedState.parser.error = error.message;
+          });
+      });
+
+      elements.posts.addEventListener('click', (e) => {
+        if (e.target.tagName === 'BUTTON') {
+          watchedState.currentId = e.target.dataset.id;
         }
       });
-  });
-
-  elements.posts.addEventListener('click', (e) => {
-    if (e.target.tagName === 'BUTTON') {
-      watchedState.currentId = e.target.dataset.id;
-    }
-  });
+    });
 };

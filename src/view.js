@@ -1,20 +1,28 @@
+import onChange from 'on-change';
+
 const inputRender = (elements, state, processState) => {
   switch (processState) {
     case false:
       elements.input.classList.add('is-invalid');
-      elements.feedback.textContent = state.form.error;
+      elements.feedback.classList.remove('text-success', 'text-info');
       elements.feedback.classList.add('text-danger');
       break;
     case true:
       elements.input.classList.remove('is-invalid');
       elements.feedback.textContent = '';
+      elements.feedback.classList.remove('text-danger', 'text-info');
+      elements.feedback.classList.add('text-success');
       break;
     default:
-      elements.feedback.textContent = 'Неизвестное состояние валидации';
+      break;
   }
 };
 
-const formRender = (elements, processState) => {
+const validationErrorRender = (elements, processState) => {
+  elements.feedback.textContent = processState;
+};
+
+const formRender = (elements, processState, i18next) => {
   switch (processState) {
     case 'sending':
       elements.submitButton.disabled = true;
@@ -24,21 +32,49 @@ const formRender = (elements, processState) => {
       break;
     case 'success':
       elements.submitButton.disabled = false;
-      elements.feedback.textContent = 'RSS успешно загружен';
+      elements.feedback.textContent = i18next.t('rssSuccess');
+      elements.feedback.classList.remove('text-danger', 'text-info');
       elements.feedback.classList.add('text-success');
-      elements.feedback.classList.remove('text-danger');
       elements.input.value = '';
       elements.input.focus();
       break;
     default:
-      elements.feedback.textContent = 'Неизвестное состояние статуса отправки';
+      break;
   }
 };
 
-const feedsRender = (elements, data) => {
+const parserErrorRender = (elements, i18next, state) => {
+  elements.feedback.classList.remove('text-success', 'text-info');
+  elements.feedback.classList.add('text-danger');
+  elements.feedback.textContent = state.parser.error;
+};
+
+const loadingProcessRender = (elements, processState, i18next) => {
+  switch (processState) {
+    case 'loading':
+      elements.feedback.textContent = i18next.t('loadingProccess.loading');
+      elements.feedback.classList.remove('text-danger', 'text-success');
+      elements.feedback.classList.add('text-info');
+      break;
+    case 'success':
+      elements.feedback.textContent = i18next.t('loadingProcess.success');
+      elements.feedback.classList.remove('text-danger', 'text-info');
+      elements.feedback.classList.add('text-success');
+      break;
+    case 'error':
+      elements.feedback.textContent = i18next.t('errors.networkError');
+      elements.feedback.classList.remove('text-success', 'text-info');
+      elements.feedback.classList.add('text-danger');
+      break;
+    default:
+      break;
+  }
+};
+
+const feedsRender = (elements, data, i18next) => {
   const container = document.createElement('div');
   container.className = 'card border-0';
-  container.innerHTML = '<div class="card-body"><h2 class="card-title h4">Фиды</h2></div>';
+  container.innerHTML = `<div class="card-body"><h2 class="card-title h4">${i18next.t('feeds')}</h2></div>`;
   const ulOfFeeds = document.createElement('ul');
   ulOfFeeds.classList.add('list-group', 'border-0', 'rounses-0');
   data.forEach((feed) => {
@@ -52,10 +88,10 @@ const feedsRender = (elements, data) => {
   container.append(ulOfFeeds);
 };
 
-const postsRender = (elements, data) => {
+const postsRender = (elements, data, i18next) => {
   const container = document.createElement('div');
   container.className = 'card border-0';
-  container.innerHTML = '<div class="card-body"><h2 class="card-title h4">Посты</h2></div>';
+  container.innerHTML = `<div class="card-body"><h2 class="card-title h4">${i18next.t('posts')}</h2></div>`;
   const ulOfPosts = document.createElement('ul');
   ulOfPosts.classList.add('list-group', 'border-0', 'rounded-0');
   data.forEach((post) => {
@@ -76,7 +112,7 @@ const postsRender = (elements, data) => {
     previewButton.className = 'btn btn-outline-primary btn-sm';
     previewButton.dataset.bsToggle = 'modal';
     previewButton.dataset.bsTarget = '#modal';
-    previewButton.textContent = 'Просмотр';
+    previewButton.textContent = i18next.t('preview');
 
     li.append(postElement);
     li.append(previewButton);
@@ -87,40 +123,44 @@ const postsRender = (elements, data) => {
   container.append(ulOfPosts);
 };
 
-const modalRender = (elements, state, currentId) => {
+const modalRender = (elements, state, currentId, i18next) => {
   const currentPost = state.posts.find((post) => post.id === currentId);
   elements.modalTitle.textContent = currentPost.title;
   elements.modalBody.textContent = currentPost.description;
   elements.modalReadButton.href = currentPost.link;
+  elements.modalReadButton.textContent = i18next.t('modal.read');
+  elements.modalCloseButton.textContent = i18next.t('modal.close');
 };
 
-export default (elements, state) => (path, value) => {
+const render = (elements, state, i18next) => (path, value) => {
   switch (path) {
     case 'form.isValid':
       inputRender(elements, state, value);
       break;
+    case 'form.validationError':
+      validationErrorRender(elements, value);
+      break;
     case 'form.status':
-      formRender(elements, value);
+      formRender(elements, value, i18next);
       break;
     case 'parser.error':
-      elements.feedback.textContent = state.parser.error.message;
+      parserErrorRender(elements, i18next, state);
       break;
-    case 'loadingProcess.error':
-      console.log(state.loadingProcess.error);
-      break;
-    case 'parser.data':
-      console.log(state.parser.data);
+    case 'loadingProcess.status':
+      loadingProcessRender(elements, value, i18next, state);
       break;
     case 'feeds':
-      feedsRender(elements, value);
+      feedsRender(elements, value, i18next);
       break;
     case 'posts':
-      postsRender(elements, value);
+      postsRender(elements, value, i18next);
       break;
     case 'currentId':
-      modalRender(elements, state, value);
+      modalRender(elements, state, value, i18next);
       break;
-    // default:
-    //   elements.feedback.textContent = 'неизвестное состояние State';
+    default:
+      break;
   }
 };
+
+export default (elements, state, i18next) => onChange(state, render(elements, state, i18next));

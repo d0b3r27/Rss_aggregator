@@ -1,15 +1,19 @@
 import uniqueId from 'lodash.uniqueid';
 
-export default (response) => {
+export default (response, state, i18next) => new Promise((resolve, reject) => {
   const parser = new DOMParser();
   const data = parser.parseFromString(response, 'text/xml');
   const errorNode = data.querySelector('parsererror');
   if (errorNode) {
-    throw new Error('Parsing error');
+    state.parser.error = i18next.t('errors.parsingError');
+    reject(new Error(i18next.t('errors.parsingError')));
+    return;
   }
   const channel = data.querySelector('channel');
   if (!channel) {
-    throw new Error('No channel found in RSS feed');
+    state.parser.error = i18next.t('errors.noChannelInRss');
+    reject(new Error(i18next.t('errors.noChannelInRss')));
+    return;
   }
   const channelTitle = channel.querySelector('title')?.textContent || '';
   const channelDescription = channel.querySelector('description')?.textContent || '';
@@ -21,13 +25,12 @@ export default (response) => {
     pubDate: item.querySelector('pubDate')?.textContent || '',
     link: item.querySelector('link')?.textContent || '',
   }));
-
-  return {
+  resolve({
     channel: {
       title: channelTitle,
       description: channelDescription,
       link: channelLink,
     },
     posts: items,
-  };
-};
+  });
+});
