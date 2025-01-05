@@ -18,7 +18,7 @@ export default {
       alreadyExists: 'RSS уже существует',
       networkError: 'Ошибка сети',
       parsingError: 'Ошибка парсинга',
-      noChannelInRss: 'Канал не найден в RSS',
+      noChannelInRss: 'Ресурс не содержит валидный RSS',
     },
   },
 };

@@ -34,7 +34,8 @@ export default () => {
       error: '',
     },
     posts: [],
-    currentId: '',
+    readedPostsId: [],
+    previewPostId: '',
     feeds: [],
     addedUrls: [],
     lng: 'ru',
@@ -62,6 +63,12 @@ export default () => {
         throw error.message;
       });
   };
+
+  // const rssUpdate = (addedUrls, state, timeout = 5000) => {
+  //   addedUrls.forEach((url) => {
+      
+  //   });
+  // }
 
   const i18nextInstatce = i18next.createInstance();
   i18nextInstatce.init({
@@ -114,13 +121,20 @@ export default () => {
           })
           .catch((error) => {
             watchedState.form.status = 'filling';
-            // watchedState.parser.error = error.message;
+            setTimeout(() => {
+              throw error;
+            }, 0);
           });
       });
 
       elements.posts.addEventListener('click', (e) => {
         if (e.target.tagName === 'BUTTON') {
-          watchedState.currentId = e.target.dataset.id;
+          watchedState.previewPostId = e.target.dataset.id;
+          if (!watchedState.readedPostsId.includes(e.target.dataset.id)) {
+            watchedState.readedPostsId.push(e.target.dataset.id);
+          }
+        } if (e.target.tagName === 'A' && !watchedState.readedPostsId.includes(e.target.dataset.id)) {
+          watchedState.readedPostsId.push(e.target.dataset.id);
         }
       });
     });

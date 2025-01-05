@@ -123,8 +123,15 @@ const postsRender = (elements, data, i18next) => {
   container.append(ulOfPosts);
 };
 
-const modalRender = (elements, state, currentId, i18next) => {
-  const currentPost = state.posts.find((post) => post.id === currentId);
+const readedPostsRender = (readedPostsId) => {
+  readedPostsId.forEach((id) => {
+    const postTitle = document.querySelector(`a[data-id="${id}"]`);
+    postTitle.className = 'fw-normal';
+  });
+};
+
+const modalRender = (elements, state, previewPostId, i18next) => {
+  const currentPost = state.posts.find((post) => post.id === previewPostId);
   elements.modalTitle.textContent = currentPost.title;
   elements.modalBody.textContent = currentPost.description;
   elements.modalReadButton.href = currentPost.link;
@@ -155,8 +162,11 @@ const render = (elements, state, i18next) => (path, value) => {
     case 'posts':
       postsRender(elements, value, i18next);
       break;
-    case 'currentId':
+    case 'previewPostId':
       modalRender(elements, state, value, i18next);
+      break;
+    case 'readedPostsId':
+      readedPostsRender(value);
       break;
     default:
       break;

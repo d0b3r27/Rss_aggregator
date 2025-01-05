@@ -18,7 +18,7 @@ export default {
       alreadyExists: 'RSS already exists',
       networkError: 'Network error',
       parsingError: 'Parsing error',
-      noChannelInRss: 'No channel found in RSS feed',
+      noChannelInRss: 'The resource does not contain a valid RSS',
     },
   },
 };
