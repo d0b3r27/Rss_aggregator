@@ -4,15 +4,15 @@ export default (response, state, i18next) => new Promise((resolve, reject) => {
   const parser = new DOMParser();
   const data = parser.parseFromString(response, 'text/xml');
   const errorNode = data.querySelector('parsererror');
+  const channel = data.querySelector('channel');
+  if (channel) {
+    state.parser.error = i18next.t('errors.noChannelInRss');
+    reject(new Error(i18next.t('errors.noChannelInRss')));
+    return;
+  }
   if (errorNode) {
     state.parser.error = i18next.t('errors.parsingError');
     reject(new Error(i18next.t('errors.parsingError')));
-    return;
-  }
-  const channel = data.querySelector('channel');
-  if (!channel) {
-    state.parser.error = i18next.t('errors.noChannelInRss');
-    reject(new Error(i18next.t('errors.noChannelInRss')));
     return;
   }
   const channelTitle = channel.querySelector('title')?.textContent || '';
