@@ -3,7 +3,7 @@ export default {
     feeds: 'Фиды',
     posts: 'Посты',
     preview: 'Просмотр',
-    rssSuccess: 'RSS успешно добавлен',
+    rssSuccess: 'RSS успешно загружен',
     modal: {
       read: 'Читать полностью',
       close: 'Закрыть',

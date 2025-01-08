@@ -3,7 +3,7 @@ export default {
     feeds: 'Feeds',
     posts: 'Posts',
     preview: 'Preview',
-    rssSuccess: 'RSS successfully added',
+    rssSuccess: 'RSS successfully downloaded',
     modal: {
       read: 'Read more',
       close: 'Close',
