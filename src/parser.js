@@ -25,12 +25,13 @@ export default (response, state, i18next) => new Promise((resolve, reject) => {
     pubDate: item.querySelector('pubDate')?.textContent || '',
     link: item.querySelector('link')?.textContent || '',
   }));
+  const sortedItems = items.sort((a, b) => new Date(a.pubDate) - new Date(b.pubDate));
   resolve({
     channel: {
       title: channelTitle,
       description: channelDescription,
       link: channelLink,
     },
-    posts: items,
+    posts: sortedItems,
   });
 });

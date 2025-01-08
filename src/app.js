@@ -1,7 +1,7 @@
 import * as yup from 'yup';
 import axios from 'axios';
 import i18next from 'i18next';
-import resources from './locales/index.js';
+import res from './locales/index.js';
 import watcher from './view.js';
 import parser from './parser.js';
 
@@ -39,6 +39,10 @@ export default () => {
     feeds: [],
     addedUrls: [],
     lng: 'ru',
+    autoUpdate: {
+      time: 5000,
+      error: '',
+    },
   };
 
   // Добавление Proxy к URL
@@ -47,16 +51,8 @@ export default () => {
   // Запрос с использованием Proxy
   const getData = (url, state) => {
     const proxiedUrl = addProxy(url);
-    state.loadingProcess.status = 'loading';
     return axios.get(proxiedUrl)
-      .then((response) => {
-        state.loadingProcess.status = 'succes';
-        return response.data.contents;
-      })
-      .then((data) => {
-        state.loadingProcess.status = 'idle';
-        return data;
-      })
+      .then((response) => response.data.contents)
       .catch((error) => {
         state.loadingProcess.error = error.message;
         state.loadingProcess.status = 'error';
@@ -64,16 +60,27 @@ export default () => {
       });
   };
 
-  // const rssUpdate = (addedUrls, state, timeout = 5000) => {
-  //   addedUrls.forEach((url) => {
-      
-  //   });
-  // }
+  const rssUpdate = (state, i18n) => {
+    state.addedUrls.forEach((url) => {
+      getData(url, state)
+        .then((response) => parser(response, state, i18n))
+        .then(({ posts }) => {
+          const addedPostsId = state.posts.map((post) => post.link);
+          const newPosts = posts.filter((item) => !addedPostsId.includes(item.link));
+          state.posts.push(...newPosts);
+        })
+        .catch((error) => {
+          state.autoUpdate.error = error.message;
+          throw error;
+        });
+    });
+    setTimeout(() => rssUpdate(state, i18n), state.autoUpdate.time);
+  };
 
   const i18nextInstatce = i18next.createInstance();
   i18nextInstatce.init({
     lng: initialState.lng,
-    resources: resources,
+    resources: res,
   })
     .then(() => {
       const watchedState = watcher(elements, initialState, i18nextInstatce);
@@ -110,20 +117,23 @@ export default () => {
         validate(inputValue, watchedState)
           .then(() => {
             watchedState.form.status = 'sending';
+            watchedState.loadingProcess.status = 'loading';
             return getData(inputValue, watchedState);
           })
-          .then((response) => parser(response, watchedState, i18nextInstatce))
+          .then((response) => {
+            watchedState.loadingProcess.status = 'succes';
+            return parser(response, watchedState, i18nextInstatce);
+          })
           .then((data) => {
+            watchedState.loadingProcess.status = 'idle';
             watchedState.feeds.push(data.channel);
             watchedState.posts.push(...data.posts);
             watchedState.addedUrls.push(inputValue);
             watchedState.form.status = 'success';
           })
-          .catch((error) => {
+          .then(() => setTimeout(() => rssUpdate(watchedState, i18nextInstatce), 5000))
+          .catch(() => {
             watchedState.form.status = 'filling';
-            setTimeout(() => {
-              throw error;
-            }, 0);
           });
       });
 
