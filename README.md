@@ -14,17 +14,17 @@
 [![onChange](https://img.shields.io/badge/onChange-gray?style=flat&logoColor=white)](https://github.com/jquense/yup)
 [![yup](https://img.shields.io/badge/yup-gray?style=flat&logoColor=white)](https://github.com/sindresorhus/on-change)
 
-## Установка:
+### Установка:
 ```bash
 make install
 ```
 
-## Сборка:
+### Сборка:
 ```bash
 make build
 ```
 
-## Запуск для разработки:
+### Запуск для разработки:
 ```bash
 make develop
 ```
