@@ -1,6 +1,6 @@
 import onChange from 'on-change';
 
-const inputRender = (elements, state, processState) => {
+const inputRender = (elements, processState) => {
   switch (processState) {
     case false:
       elements.input.classList.add('is-invalid');
@@ -43,7 +43,7 @@ const formRender = (elements, processState, i18next) => {
   }
 };
 
-const parserErrorRender = (elements, i18next, state) => {
+const parserErrorRender = (elements, state) => {
   elements.feedback.classList.remove('text-success', 'text-info');
   elements.feedback.classList.add('text-danger');
   elements.feedback.textContent = state.parser.error;
