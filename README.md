@@ -29,5 +29,5 @@ make build
 make develop
 ```
 
-### Vercel demo:
-frontend-project-11-alpha-six.vercel.app
+### Vercel:
+[frontend-project-11-alpha-six.vercel.app](https://frontend-project-11-alpha-six.vercel.app/)
