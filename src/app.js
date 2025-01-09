@@ -45,12 +45,10 @@ export default () => {
     },
   };
 
-  // Добавление Proxy к URL
-  const addProxy = (url) => `https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(url)}`;
+  const addProxyToUrl = (url) => `https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(url)}`;
 
-  // Запрос с использованием Proxy
   const getData = (url, state) => {
-    const proxiedUrl = addProxy(url);
+    const proxiedUrl = addProxyToUrl(url);
     return axios.get(proxiedUrl)
       .then((response) => response.data.contents)
       .catch((error) => {
@@ -85,7 +83,6 @@ export default () => {
     .then(() => {
       const watchedState = watcher(elements, initialState, i18nextInstatce);
 
-      // Схема валидации
       const schema = yup
         .string()
         .url(i18nextInstatce.t('errors.invalidUrl'))
@@ -96,8 +93,7 @@ export default () => {
           (value) => !watchedState.addedUrls.includes(value),
         );
 
-      // Валидатор
-      const validate = (url, state) => schema.validate(url)
+      const isValid = (url, state) => schema.validate(url)
         .then(() => {
           state.form.isValid = true;
           state.form.validationError = '';
@@ -114,7 +110,7 @@ export default () => {
         const inputValue = formData.get('url');
         watchedState.form.validationError = '';
 
-        validate(inputValue, watchedState)
+        isValid(inputValue, watchedState)
           .then(() => {
             watchedState.form.status = 'sending';
             watchedState.loadingProcess.status = 'loading';

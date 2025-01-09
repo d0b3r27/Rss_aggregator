@@ -30,4 +30,4 @@ make develop
 ```
 
 ### Vercel demo:
-https://frontend-project-11-nw6gbx45n-andreys-projects-42abc326.vercel.app/
+frontend-project-11-alpha-six.vercel.app
