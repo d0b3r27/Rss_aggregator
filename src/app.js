@@ -31,6 +31,7 @@ export default () => {
       error: '',
     },
     parser: {
+      status: '',
       error: '',
     },
     posts: [],
@@ -52,7 +53,6 @@ export default () => {
     return axios.get(proxiedUrl)
       .then((response) => response.data.contents)
       .catch((error) => {
-        state.loadingProcess.error = error.message;
         state.loadingProcess.status = 'error';
         throw error.message;
       });
@@ -96,11 +96,11 @@ export default () => {
       const isValid = (url, state) => schema.validate(url)
         .then(() => {
           state.form.isValid = true;
-          state.form.validationError = '';
         })
         .catch((error) => {
           state.form.validationError = error.message;
           state.form.isValid = false;
+          state.form.isValid = null;
           throw error.message;
         });
 
@@ -112,15 +112,19 @@ export default () => {
 
         isValid(inputValue, watchedState)
           .then(() => {
+            watchedState.form.validationError = '';
+            watchedState.parser.error = '';
+            watchedState.loadingProcess.error = '';
             watchedState.form.status = 'sending';
             watchedState.loadingProcess.status = 'loading';
             return getData(inputValue, watchedState);
           })
           .then((response) => {
-            watchedState.loadingProcess.status = 'succes';
+            watchedState.loadingProcess.status = 'success';
             return parser(response, watchedState, i18nextInstatce);
           })
           .then((data) => {
+            watchedState.parser.status = '';
             watchedState.loadingProcess.status = 'idle';
             watchedState.feeds.push(data.channel);
             watchedState.posts.push(...data.posts);
@@ -128,8 +132,13 @@ export default () => {
             watchedState.form.status = 'success';
           })
           .then(() => setTimeout(() => rssUpdate(watchedState, i18nextInstatce), 5000))
-          .catch(() => {
+          .catch((error) => {
             watchedState.form.status = 'filling';
+            if (watchedState.loadingProcess.status === 'error') {
+              watchedState.loadingProcess.error = error.message;
+            } if (watchedState.parser.status === 'error') {
+              watchedState.parser.error = error.message;
+            }
           });
       });
 

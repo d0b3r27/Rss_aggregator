@@ -1,11 +1,12 @@
 import onChange from 'on-change';
 
-const inputRender = (elements, processState) => {
+const inputRender = (elements, state, processState) => {
   switch (processState) {
     case false:
       elements.input.classList.add('is-invalid');
       elements.feedback.classList.remove('text-success', 'text-info');
       elements.feedback.classList.add('text-danger');
+      elements.feedback.textContent = state.form.validationError;
       break;
     case true:
       elements.input.classList.remove('is-invalid');
@@ -16,10 +17,6 @@ const inputRender = (elements, processState) => {
     default:
       break;
   }
-};
-
-const validationErrorRender = (elements, processState) => {
-  elements.feedback.textContent = processState;
 };
 
 const formRender = (elements, processState, i18next) => {
@@ -43,23 +40,29 @@ const formRender = (elements, processState, i18next) => {
   }
 };
 
-const parserErrorRender = (elements, state) => {
-  elements.feedback.classList.remove('text-success', 'text-info');
-  elements.feedback.classList.add('text-danger');
-  elements.feedback.textContent = state.parser.error;
+const parserErrorRender = (elements, state, processState) => {
+  switch (processState) {
+    case 'error':
+      elements.feedback.classList.remove('text-success', 'text-info');
+      elements.feedback.classList.add('text-danger');
+      elements.feedback.textContent = state.parser.error;
+      break;
+    default:
+      break;
+  }
 };
 
 const loadingProcessRender = (elements, processState, i18next) => {
   switch (processState) {
     case 'loading':
-      elements.feedback.textContent = i18next.t('loadingProccess.loading');
+      elements.feedback.textContent = i18next.t('loadingProcess.loading');
       elements.feedback.classList.remove('text-danger', 'text-success');
       elements.feedback.classList.add('text-info');
       break;
     case 'success':
       elements.feedback.textContent = i18next.t('loadingProcess.success');
-      elements.feedback.classList.remove('text-danger', 'text-info');
-      elements.feedback.classList.add('text-success');
+      elements.feedback.classList.remove('text-danger', 'text-success');
+      elements.feedback.classList.add('text-info');
       break;
     case 'error':
       elements.feedback.textContent = i18next.t('errors.networkError');
@@ -144,14 +147,11 @@ const render = (elements, state, i18next) => (path, value) => {
     case 'form.isValid':
       inputRender(elements, state, value);
       break;
-    case 'form.validationError':
-      validationErrorRender(elements, value);
-      break;
     case 'form.status':
       formRender(elements, value, i18next);
       break;
-    case 'parser.error':
-      parserErrorRender(elements, i18next, state);
+    case 'parser.status':
+      parserErrorRender(elements, state, value);
       break;
     case 'loadingProcess.status':
       loadingProcessRender(elements, value, i18next, state);

@@ -6,12 +6,12 @@ export default (response, state, i18next) => new Promise((resolve, reject) => {
   const errorNode = data.querySelector('parsererror');
   const channel = data.querySelector('channel');
   if (!channel) {
-    state.parser.error = i18next.t('errors.noChannelInRss');
+    state.parser.status = 'error';
     reject(new Error(i18next.t('errors.noChannelInRss')));
     return;
   }
   if (errorNode) {
-    state.parser.error = i18next.t('errors.parsingError');
+    state.parser.status = 'error';
     reject(new Error(i18next.t('errors.parsingError')));
     return;
   }

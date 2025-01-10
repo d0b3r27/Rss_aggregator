@@ -8,7 +8,7 @@ export default {
       read: 'Read more',
       close: 'Close',
     },
-    loadingProccess: {
+    loadingProcess: {
       loading: 'Downloading',
       seccess: 'Download complete',
     },

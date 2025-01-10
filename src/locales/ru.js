@@ -8,9 +8,9 @@ export default {
       read: 'Читать полностью',
       close: 'Закрыть',
     },
-    loadingProccess: {
+    loadingProcess: {
       loading: 'Идет загрузка',
-      seccess: 'Загрузка завершена',
+      success: 'Загрузка завершена',
     },
     errors: {
       empty: 'Поле не должно быть пустым',
