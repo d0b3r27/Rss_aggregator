@@ -40,12 +40,12 @@ const formRender = (elements, processState, i18next) => {
   }
 };
 
-const parserErrorRender = (elements, state, processState) => {
+const parserErrorRender = (elements, state, processState, i18next) => {
   switch (processState) {
     case 'error':
       elements.feedback.classList.remove('text-success', 'text-info');
       elements.feedback.classList.add('text-danger');
-      elements.feedback.textContent = state.parser.error;
+      elements.feedback.textContent = i18next.t(state.parser.error);
       break;
     default:
       break;
@@ -151,7 +151,7 @@ const render = (elements, state, i18next) => (path, value) => {
       formRender(elements, value, i18next);
       break;
     case 'parser.status':
-      parserErrorRender(elements, state, value);
+      parserErrorRender(elements, state, value, i18next);
       break;
     case 'loadingProcess.status':
       loadingProcessRender(elements, value, i18next, state);

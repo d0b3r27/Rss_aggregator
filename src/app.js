@@ -48,20 +48,44 @@ export default () => {
 
   const addProxyToUrl = (url) => `https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(url)}`;
 
-  const getData = (url, state) => {
+  const getRssData = (url, state) => {
     const proxiedUrl = addProxyToUrl(url);
-    return axios.get(proxiedUrl)
-      .then((response) => response.data.contents)
+    state.form.status = 'sending';
+    state.loadingProcess.status = 'loading';
+    axios.get(proxiedUrl)
+      .then((response) => {
+        state.loadingProcess.status = 'success';
+        return parser(response.data.contents);
+      })
+      .then((data) => {
+        state.feeds.push(data.channel);
+        state.posts.push(...data.posts);
+        state.addedUrls.push(url);
+        state.form.status = 'success';
+      })
       .catch((error) => {
-        state.loadingProcess.status = 'error';
-        throw error.message;
+        if (error.message === 'errors.noChannelInRss' || error.message === 'errors.parsingError') {
+          state.parser.error = error.message;
+          state.parser.status = 'error';
+        } else {
+          state.loadingProcess.status = 'error';
+        }
+      })
+      .finally(() => {
+        state.form.status = 'filling';
+        state.form.validationError = '';
+        state.loadingProcess.status = 'idle';
+        state.loadingProcess.error = '';
+        state.parser.status = '';
+        state.parser.error = '';
       });
   };
 
-  const rssUpdate = (state, i18n) => {
+  const rssUpdate = (state) => {
     state.addedUrls.forEach((url) => {
-      getData(url, state)
-        .then((response) => parser(response, state, i18n))
+      const proxiedUrl = addProxyToUrl(url);
+      axios.get(proxiedUrl, state)
+        .then((response) => parser(response))
         .then(({ posts }) => {
           const addedPostsId = state.posts.map((post) => post.link);
           const newPosts = posts.filter((item) => !addedPostsId.includes(item.link));
@@ -72,7 +96,7 @@ export default () => {
           throw error;
         });
     });
-    setTimeout(() => rssUpdate(state, i18n), state.autoUpdate.time);
+    setTimeout(() => rssUpdate(state), state.autoUpdate.time);
   };
 
   const i18nextInstatce = i18next.createInstance();
@@ -98,47 +122,21 @@ export default () => {
           state.form.isValid = true;
         })
         .catch((error) => {
-          state.form.validationError = error.message;
-          state.form.isValid = false;
-          state.form.isValid = null;
-          throw error.message;
+          throw error;
         });
 
       elements.form.addEventListener('submit', (e) => {
         e.preventDefault();
         const formData = new FormData(e.target);
         const inputValue = formData.get('url');
-        watchedState.form.validationError = '';
 
         isValid(inputValue, watchedState)
-          .then(() => {
-            watchedState.form.validationError = '';
-            watchedState.parser.error = '';
-            watchedState.loadingProcess.error = '';
-            watchedState.form.status = 'sending';
-            watchedState.loadingProcess.status = 'loading';
-            return getData(inputValue, watchedState);
-          })
-          .then((response) => {
-            watchedState.loadingProcess.status = 'success';
-            return parser(response, watchedState, i18nextInstatce);
-          })
-          .then((data) => {
-            watchedState.parser.status = '';
-            watchedState.loadingProcess.status = 'idle';
-            watchedState.feeds.push(data.channel);
-            watchedState.posts.push(...data.posts);
-            watchedState.addedUrls.push(inputValue);
-            watchedState.form.status = 'success';
-          })
-          .then(() => setTimeout(() => rssUpdate(watchedState, i18nextInstatce), 5000))
+          .then(() => getRssData(inputValue, watchedState, i18nextInstatce))
+          .then(() => setTimeout(() => rssUpdate(watchedState), 5000))
           .catch((error) => {
-            watchedState.form.status = 'filling';
-            if (watchedState.loadingProcess.status === 'error') {
-              watchedState.loadingProcess.error = error.message;
-            } if (watchedState.parser.status === 'error') {
-              watchedState.parser.error = error.message;
-            }
+            watchedState.form.validationError = error.message;
+            watchedState.form.isValid = false;
+            watchedState.form.isValid = null;
           });
       });
 

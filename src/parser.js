@@ -1,19 +1,15 @@
 import uniqueId from 'lodash.uniqueid';
 
-export default (response, state, i18next) => new Promise((resolve, reject) => {
+export default (response) => {
   const parser = new DOMParser();
   const data = parser.parseFromString(response, 'text/xml');
   const errorNode = data.querySelector('parsererror');
   const channel = data.querySelector('channel');
   if (!channel) {
-    state.parser.status = 'error';
-    reject(new Error(i18next.t('errors.noChannelInRss')));
-    return;
+    throw (new Error('errors.noChannelInRss'));
   }
   if (errorNode) {
-    state.parser.status = 'error';
-    reject(new Error(i18next.t('errors.parsingError')));
-    return;
+    throw (new Error(('errors.parsingError')));
   }
   const channelTitle = channel.querySelector('title')?.textContent || '';
   const channelDescription = channel.querySelector('description')?.textContent || '';
@@ -26,12 +22,12 @@ export default (response, state, i18next) => new Promise((resolve, reject) => {
     link: item.querySelector('link')?.textContent || '',
   }));
   const sortedItems = items.sort((a, b) => new Date(a.pubDate) - new Date(b.pubDate));
-  resolve({
+  return {
     channel: {
       title: channelTitle,
       description: channelDescription,
       link: channelLink,
     },
     posts: sortedItems,
-  });
-});
+  };
+};
