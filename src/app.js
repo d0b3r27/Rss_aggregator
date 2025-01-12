@@ -85,7 +85,7 @@ export default () => {
     state.addedUrls.forEach((url) => {
       const proxiedUrl = addProxyToUrl(url);
       axios.get(proxiedUrl, state)
-        .then((response) => parser(response))
+        .then((response) => parser(response.data.contents))
         .then(({ posts }) => {
           const addedPostsId = state.posts.map((post) => post.link);
           const newPosts = posts.filter((item) => !addedPostsId.includes(item.link));
@@ -93,7 +93,6 @@ export default () => {
         })
         .catch((error) => {
           state.autoUpdate.error = error.message;
-          throw error;
         });
     });
     setTimeout(() => rssUpdate(state), state.autoUpdate.time);
