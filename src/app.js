@@ -2,7 +2,7 @@
 import * as yup from 'yup';
 import axios from 'axios';
 import i18next from 'i18next';
-import res from './locales/index.js';
+import resources from './locales/index.js';
 import watcher from './view.js';
 import parser from './parser.js';
 
@@ -31,15 +31,15 @@ export default () => {
       status: 'idle',
       error: '',
     },
-    parser: {
-      status: '',
-      error: '',
+    posts: {
+      data: [],
+      addedUrls: [],
     },
-    posts: [],
-    readedPostsId: [],
-    previewPostId: '',
+    ui: {
+      readedPostsId: [],
+      previewPostId: '',
+    },
     feeds: [],
-    addedUrls: [],
     lng: 'ru',
     autoUpdate: {
       time: 5000,
@@ -60,37 +60,31 @@ export default () => {
       })
       .then((data) => {
         state.feeds.push(data.channel);
-        state.posts.push(...data.posts);
-        state.addedUrls.push(url);
+        state.posts.data.push(...data.posts);
+        state.posts.addedUrls.push(url);
         state.form.status = 'success';
       })
       .catch((error) => {
-        if (error.message === 'errors.noChannelInRss' || error.message === 'errors.parsingError') {
-          state.parser.error = error.message;
-          state.parser.status = 'error';
-        } else {
-          state.loadingProcess.status = 'error';
-        }
+        state.loadingProcess.error = error.message;
+        state.loadingProcess.status = 'error';
       })
       .finally(() => {
         state.form.status = 'filling';
         state.form.validationError = '';
         state.loadingProcess.status = 'idle';
         state.loadingProcess.error = '';
-        state.parser.status = '';
-        state.parser.error = '';
       });
   };
 
   const rssUpdate = (state) => {
-    state.addedUrls.forEach((url) => {
+    state.posts.addedUrls.forEach((url) => {
       const proxiedUrl = addProxyToUrl(url);
       axios.get(proxiedUrl, state)
         .then((response) => parser(response.data.contents))
         .then(({ posts }) => {
-          const addedPostsId = state.posts.map((post) => post.link);
+          const addedPostsId = state.posts.data.map((post) => post.link);
           const newPosts = posts.filter((item) => !addedPostsId.includes(item.link));
-          state.posts.push(...newPosts);
+          state.posts.data.push(...newPosts);
         })
         .catch((error) => {
           state.autoUpdate.error = error.message;
@@ -102,7 +96,7 @@ export default () => {
   const i18nextInstatce = i18next.createInstance();
   i18nextInstatce.init({
     lng: initialState.lng,
-    resources: res,
+    resources,
   })
     .then(() => {
       const watchedState = watcher(elements, initialState, i18nextInstatce);
@@ -114,7 +108,7 @@ export default () => {
         .test(
           'unique-url',
           i18nextInstatce.t('errors.alreadyExists'),
-          (value) => !watchedState.addedUrls.includes(value),
+          (value) => !watchedState.posts.addedUrls.includes(value),
         );
 
       const isValid = (url, state) => schema.validate(url)
@@ -142,12 +136,12 @@ export default () => {
 
       elements.posts.addEventListener('click', (e) => {
         if (e.target.tagName === 'BUTTON') {
-          watchedState.previewPostId = e.target.dataset.id;
-          if (!watchedState.readedPostsId.includes(e.target.dataset.id)) {
-            watchedState.readedPostsId.push(e.target.dataset.id);
+          watchedState.ui.previewPostId = e.target.dataset.id;
+          if (!watchedState.ui.readedPostsId.includes(e.target.dataset.id)) {
+            watchedState.ui.readedPostsId.push(e.target.dataset.id);
           }
-        } if (e.target.tagName === 'A' && !watchedState.readedPostsId.includes(e.target.dataset.id)) {
-          watchedState.readedPostsId.push(e.target.dataset.id);
+        } if (e.target.tagName === 'A' && !watchedState.ui.readedPostsId.includes(e.target.dataset.id)) {
+          watchedState.ui.readedPostsId.push(e.target.dataset.id);
         }
       });
     });

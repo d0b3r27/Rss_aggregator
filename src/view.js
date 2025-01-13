@@ -24,12 +24,13 @@ const formRender = (elements, processState, i18next) => {
   switch (processState) {
     case 'sending':
       elements.submitButton.disabled = true;
+      elements.input.disabled = true;
       break;
     case 'filling':
+      elements.input.disabled = false;
       elements.submitButton.disabled = false;
       break;
     case 'success':
-      elements.submitButton.disabled = false;
       elements.feedback.textContent = i18next.t('rssSuccess');
       elements.feedback.classList.remove('text-danger', 'text-info');
       elements.feedback.classList.add('text-success');
@@ -41,19 +42,7 @@ const formRender = (elements, processState, i18next) => {
   }
 };
 
-const parserErrorRender = (elements, state, processState, i18next) => {
-  switch (processState) {
-    case 'error':
-      elements.feedback.classList.remove('text-success', 'text-info');
-      elements.feedback.classList.add('text-danger');
-      elements.feedback.textContent = i18next.t(state.parser.error);
-      break;
-    default:
-      break;
-  }
-};
-
-const loadingProcessRender = (elements, processState, i18next) => {
+const loadingProcessRender = (elements, state, processState, i18next) => {
   switch (processState) {
     case 'loading':
       elements.feedback.textContent = i18next.t('loadingProcess.loading');
@@ -66,7 +55,11 @@ const loadingProcessRender = (elements, processState, i18next) => {
       elements.feedback.classList.add('text-info');
       break;
     case 'error':
-      elements.feedback.textContent = i18next.t('errors.networkError');
+      if (state.loadingProcess.error === 'errors.noChannelInRss' || state.loadingProcess.error === 'errors.parsingError') {
+        elements.feedback.textContent = i18next.t(`${state.loadingProcess.error}`);
+      } else {
+        elements.feedback.textContent = i18next.t('errors.networkError');
+      }
       elements.feedback.classList.remove('text-success', 'text-info');
       elements.feedback.classList.add('text-danger');
       break;
@@ -92,7 +85,7 @@ const feedsRender = (elements, data, i18next) => {
   container.append(ulOfFeeds);
 };
 
-const postsRender = (elements, data, i18next) => {
+const postsRender = (elements, state, data, i18next) => {
   const container = document.createElement('div');
   container.className = 'card border-0';
   container.innerHTML = `<div class="card-body"><h2 class="card-title h4">${i18next.t('posts')}</h2></div>`;
@@ -105,7 +98,13 @@ const postsRender = (elements, data, i18next) => {
     const postElement = document.createElement('a');
     postElement.setAttribute('data-id', post.id);
     postElement.href = post.link;
-    postElement.className = 'fw-bold';
+
+    if (state.ui.readedPostsId.includes(post.id)) {
+      postElement.className = 'fw-normal';
+    } else {
+      postElement.className = 'fw-bold';
+    }
+
     postElement.target = '_blank';
     postElement.rel = 'noopener noreferrer';
     postElement.textContent = post.title;
@@ -135,7 +134,7 @@ const readedPostsRender = (readedPostsId) => {
 };
 
 const modalRender = (elements, state, previewPostId, i18next) => {
-  const currentPost = state.posts.find((post) => post.id === previewPostId);
+  const currentPost = state.posts.data.find((post) => post.id === previewPostId);
   elements.modalTitle.textContent = currentPost.title;
   elements.modalBody.textContent = currentPost.description;
   elements.modalReadButton.href = currentPost.link;
@@ -151,22 +150,19 @@ const render = (elements, state, i18next) => (path, value) => {
     case 'form.status':
       formRender(elements, value, i18next);
       break;
-    case 'parser.status':
-      parserErrorRender(elements, state, value, i18next);
-      break;
     case 'loadingProcess.status':
-      loadingProcessRender(elements, value, i18next, state);
+      loadingProcessRender(elements, state, value, i18next, state);
       break;
     case 'feeds':
       feedsRender(elements, value, i18next);
       break;
-    case 'posts':
-      postsRender(elements, value, i18next);
+    case 'posts.data':
+      postsRender(elements, state, value, i18next);
       break;
-    case 'previewPostId':
+    case 'ui.previewPostId':
       modalRender(elements, state, value, i18next);
       break;
-    case 'readedPostsId':
+    case 'ui.readedPostsId':
       readedPostsRender(value);
       break;
     default:
