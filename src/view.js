@@ -1,13 +1,13 @@
 /* eslint-disable no-param-reassign */
 import onChange from 'on-change';
 
-const inputRender = (elements, state, processState) => {
+const inputRender = (elements, state, processState, i18next) => {
   switch (processState) {
     case false:
       elements.input.classList.add('is-invalid');
       elements.feedback.classList.remove('text-success', 'text-info');
       elements.feedback.classList.add('text-danger');
-      elements.feedback.textContent = state.form.validationError;
+      elements.feedback.textContent = i18next.t(`${state.form.validationError}`);
       break;
     case true:
       elements.input.classList.remove('is-invalid');
@@ -145,13 +145,13 @@ const modalRender = (elements, state, previewPostId, i18next) => {
 const render = (elements, state, i18next) => (path, value) => {
   switch (path) {
     case 'form.isValid':
-      inputRender(elements, state, value);
+      inputRender(elements, state, value, i18next);
       break;
     case 'form.status':
       formRender(elements, value, i18next);
       break;
     case 'loadingProcess.status':
-      loadingProcessRender(elements, state, value, i18next, state);
+      loadingProcessRender(elements, state, value, i18next);
       break;
     case 'feeds':
       feedsRender(elements, value, i18next);
