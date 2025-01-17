@@ -41,24 +41,32 @@ const getRssData = (url, state) => {
     });
 };
 
-const update = (state) => {
-  state.posts.addedUrls.forEach((url) => {
+const update = (state, updateTime) => {
+  const updateFeeds = state.posts.addedUrls.map((url) => {
     const proxiedUrl = addProxy(url);
-    axios.get(proxiedUrl, state)
+    return axios.get(proxiedUrl)
       .then((response) => parser(response.data.contents))
       .then(({ posts }) => {
-        const addedPostsId = state.posts.data.map((post) => post.link);
-        const newPosts = posts.filter((item) => !addedPostsId.includes(item.link));
+        const existingLinks = state.posts.data.map((post) => post.link);
+        const newPosts = posts.filter((post) => !existingLinks.includes(post.link));
         state.posts.data.push(...newPosts);
       })
       .catch((error) => {
-        state.autoUpdate.error = error.message;
+        throw new Error(`Ошибка при обновлении фида: ${url}`, error);
       });
   });
-  setTimeout(() => update(state), state.autoUpdate.time);
+
+  Promise.all(updateFeeds)
+    .catch((error) => error.message)
+    .finally(() => {
+      setTimeout(() => update(state, updateTime), updateTime);
+    });
 };
 
 export default () => {
+  const defaultLanguage = 'ru';
+  const updateTime = 5000;
+
   const elements = {
     input: document.querySelector('#url-input'),
     form: document.querySelector('.rss-form'),
@@ -92,16 +100,11 @@ export default () => {
       previewPostId: '',
     },
     feeds: [],
-    lng: 'ru',
-    autoUpdate: {
-      time: 5000,
-      error: '',
-    },
   };
 
   const i18nextInstatce = i18next.createInstance();
   i18nextInstatce.init({
-    lng: initialState.lng,
+    lng: defaultLanguage,
     resources,
   })
     .then(() => {
@@ -124,30 +127,27 @@ export default () => {
         const formData = new FormData(e.target);
         const inputValue = formData.get('url');
         const urls = watchedState.posts.addedUrls;
+        watchedState.form.isValid = true;
 
         validate(inputValue, urls)
           .then((error) => {
             if (error) {
               watchedState.form.validationError = error;
               watchedState.form.isValid = false;
-              watchedState.form.isValid = null;
               return;
             }
             watchedState.form.isValid = true;
             getRssData(inputValue, watchedState);
-          })
-          .then(() => setTimeout(() => update(watchedState), 5000));
+          });
       });
 
       elements.posts.addEventListener('click', (e) => {
-        if (e.target.tagName === 'BUTTON') {
+        if (e.target.dataset.id && !watchedState.ui.readedPostsId.includes(e.target.dataset.id)) {
           watchedState.ui.previewPostId = e.target.dataset.id;
-          if (!watchedState.ui.readedPostsId.includes(e.target.dataset.id)) {
-            watchedState.ui.readedPostsId.push(e.target.dataset.id);
-          }
-        } if (e.target.tagName === 'A' && !watchedState.ui.readedPostsId.includes(e.target.dataset.id)) {
           watchedState.ui.readedPostsId.push(e.target.dataset.id);
         }
       });
+
+      update(watchedState, updateTime);
     });
 };
