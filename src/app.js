@@ -24,9 +24,9 @@ const getRssData = (url, state) => {
       return parser(response.data.contents);
     })
     .then((data) => {
+      data.channel.url = url;
       state.feeds.push(data.channel);
-      state.posts.data.push(...data.posts);
-      state.posts.addedUrls.push(url);
+      state.posts.push(...data.posts);
       state.form.status = 'success';
     })
     .catch((error) => {
@@ -42,14 +42,14 @@ const getRssData = (url, state) => {
 };
 
 const update = (state, updateTime) => {
-  const updateFeeds = state.posts.addedUrls.map((url) => {
+  const updateFeeds = state.feeds.map(({ url }) => {
     const proxiedUrl = addProxy(url);
     return axios.get(proxiedUrl)
       .then((response) => parser(response.data.contents))
       .then(({ posts }) => {
-        const existingLinks = state.posts.data.map((post) => post.link);
+        const existingLinks = state.posts.map((post) => post.link);
         const newPosts = posts.filter((post) => !existingLinks.includes(post.link));
-        state.posts.data.push(...newPosts);
+        state.posts.push(...newPosts);
       })
       .catch((error) => {
         throw new Error(`Ошибка при обновлении фида: ${url}`, error);
@@ -70,15 +70,14 @@ export default () => {
   const elements = {
     input: document.querySelector('#url-input'),
     form: document.querySelector('.rss-form'),
-    submitButton: document.querySelector('form button[type="submit"]'),
+    submitButton: document.querySelector('.rss-form button[type="submit"]'),
     feedback: document.querySelector('.feedback'),
     posts: document.querySelector('.posts'),
-    previewButtons: document.querySelectorAll('.posts button'),
     feeds: document.querySelector('.feeds'),
-    modalTitle: document.querySelector('.modal-title'),
-    modalBody: document.querySelector('.modal-body'),
-    modalReadButton: document.querySelector('.full-article'),
-    modalCloseButton: document.querySelector('button.btn-secondary[data-bs-dismiss="modal"]'),
+    modalTitle: document.querySelector('#modal .modal-title'),
+    modalBody: document.querySelector('#modal .modal-body'),
+    modalReadButton: document.querySelector('#modal .btn-primary'),
+    modalCloseButton: document.querySelector('#modal .btn-secondary'),
   };
 
   const initialState = {
@@ -91,15 +90,12 @@ export default () => {
       status: 'idle',
       error: '',
     },
-    posts: {
-      data: [],
-      addedUrls: [],
-    },
+    posts: [],
+    feeds: [],
     ui: {
-      readedPostsId: [],
+      readedPostsId: new Set(),
       previewPostId: '',
     },
-    feeds: [],
   };
 
   const i18nextInstatce = i18next.createInstance();
@@ -126,7 +122,7 @@ export default () => {
         e.preventDefault();
         const formData = new FormData(e.target);
         const inputValue = formData.get('url');
-        const urls = watchedState.posts.addedUrls;
+        const urls = watchedState.feeds.map(({ url }) => url);
         watchedState.form.isValid = true;
 
         validate(inputValue, urls)
@@ -142,9 +138,9 @@ export default () => {
       });
 
       elements.posts.addEventListener('click', (e) => {
-        if (e.target.dataset.id && !watchedState.ui.readedPostsId.includes(e.target.dataset.id)) {
+        if (e.target.dataset.id) {
           watchedState.ui.previewPostId = e.target.dataset.id;
-          watchedState.ui.readedPostsId.push(e.target.dataset.id);
+          watchedState.ui.readedPostsId.add(e.target.dataset.id);
         }
       });
 

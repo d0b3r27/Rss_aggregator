@@ -99,7 +99,7 @@ const postsRender = (elements, state, data, i18next) => {
     postElement.setAttribute('data-id', post.id);
     postElement.href = post.link;
 
-    if (state.ui.readedPostsId.includes(post.id)) {
+    if (state.ui.readedPostsId.has(post.id)) {
       postElement.className = 'fw-normal';
     } else {
       postElement.className = 'fw-bold';
@@ -134,7 +134,7 @@ const readedPostsRender = (readedPostsId) => {
 };
 
 const modalRender = (elements, state, previewPostId, i18next) => {
-  const currentPost = state.posts.data.find((post) => post.id === previewPostId);
+  const currentPost = state.posts.find((post) => post.id === previewPostId);
   elements.modalTitle.textContent = currentPost.title;
   elements.modalBody.textContent = currentPost.description;
   elements.modalReadButton.href = currentPost.link;
@@ -156,7 +156,7 @@ const render = (elements, state, i18next) => (path, value) => {
     case 'feeds':
       feedsRender(elements, value, i18next);
       break;
-    case 'posts.data':
+    case 'posts':
       postsRender(elements, state, value, i18next);
       break;
     case 'ui.previewPostId':
