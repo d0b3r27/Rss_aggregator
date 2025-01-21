@@ -6,6 +6,21 @@ import resources from './locales/index.js';
 import watch from './view.js';
 import parser from './parser.js';
 
+const defaultLanguage = 'ru';
+const updateTime = 5000;
+
+const validate = (url, urls) => {
+  const schema = yup
+    .string()
+    .url('errors.invalidUrl')
+    .required('errors.empty')
+    .notOneOf(urls, 'errors.alreadyExists');
+
+  return schema.validate(url)
+    .then(() => null)
+    .catch((error) => error.message);
+};
+
 const addProxy = (url) => {
   const allOriginsLink = 'https://allorigins.hexlet.app/get';
   const proxyLink = new URL(allOriginsLink);
@@ -16,57 +31,51 @@ const addProxy = (url) => {
 
 const getRssData = (url, state) => {
   const proxiedUrl = addProxy(url);
-  state.form.status = 'sending';
   state.loadingProcess.status = 'loading';
   axios.get(proxiedUrl)
     .then((response) => {
-      state.loadingProcess.status = 'success';
+      state.loadingProcess.status = 'dataReceived';
       return parser(response.data.contents);
     })
     .then((data) => {
       data.channel.url = url;
       state.feeds.push(data.channel);
       state.posts.push(...data.posts);
-      state.form.status = 'success';
+      state.loadingProcess.status = 'success';
     })
     .catch((error) => {
       state.loadingProcess.error = error.message;
       state.loadingProcess.status = 'error';
     })
     .finally(() => {
-      state.form.status = 'filling';
       state.form.validationError = '';
       state.loadingProcess.status = 'idle';
       state.loadingProcess.error = '';
     });
 };
 
-const update = (state, updateTime) => {
+const update = (state, timeout) => {
   const updateFeeds = state.feeds.map(({ url }) => {
     const proxiedUrl = addProxy(url);
     return axios.get(proxiedUrl)
-      .then((response) => parser(response.data.contents))
-      .then(({ posts }) => {
+      .then((response) => {
+        const { posts } = parser(response.data.contents);
         const existingLinks = state.posts.map((post) => post.link);
         const newPosts = posts.filter((post) => !existingLinks.includes(post.link));
         state.posts.push(...newPosts);
       })
       .catch((error) => {
-        throw new Error(`Ошибка при обновлении фида: ${url}`, error);
+        console.log(`Ошибка при обновлении фида: ${url}`, error);
       });
   });
 
   Promise.all(updateFeeds)
-    .catch((error) => error.message)
     .finally(() => {
-      setTimeout(() => update(state, updateTime), updateTime);
+      setTimeout(() => update(state, timeout), timeout);
     });
 };
 
 export default () => {
-  const defaultLanguage = 'ru';
-  const updateTime = 5000;
-
   const elements = {
     input: document.querySelector('#url-input'),
     form: document.querySelector('.rss-form'),
@@ -82,7 +91,6 @@ export default () => {
 
   const initialState = {
     form: {
-      status: 'filling',
       isValid: 'false',
       validationError: '',
     },
@@ -105,18 +113,6 @@ export default () => {
   })
     .then(() => {
       const watchedState = watch(elements, initialState, i18nextInstatce);
-
-      const validate = (url, urls) => {
-        const schema = yup
-          .string()
-          .url('errors.invalidUrl')
-          .required('errors.empty')
-          .notOneOf(urls, 'errors.alreadyExists');
-
-        return schema.validate(url)
-          .then(() => null)
-          .catch((error) => error.message);
-      };
 
       elements.form.addEventListener('submit', (e) => {
         e.preventDefault();

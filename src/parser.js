@@ -1,8 +1,8 @@
 import uniqueId from 'lodash/uniqueId.js';
 
-export default (response) => {
+export default (content) => {
   const parser = new DOMParser();
-  const data = parser.parseFromString(response, 'text/xml');
+  const data = parser.parseFromString(content, 'text/xml');
   const errorNode = data.querySelector('parsererror');
   const channel = data.querySelector('channel');
   if (!channel) {

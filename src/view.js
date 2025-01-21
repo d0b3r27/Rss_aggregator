@@ -20,39 +20,28 @@ const inputRender = (elements, state, processState, i18next) => {
   }
 };
 
-const formRender = (elements, processState, i18next) => {
+const loadingProcessRender = (elements, state, processState, i18next) => {
   switch (processState) {
-    case 'sending':
+    case 'loading':
       elements.submitButton.disabled = true;
       elements.input.disabled = true;
+      elements.feedback.textContent = i18next.t('loadingProcess.loading');
+      elements.feedback.classList.remove('text-danger', 'text-success');
+      elements.feedback.classList.add('text-info');
       break;
-    case 'filling':
-      elements.input.disabled = false;
-      elements.submitButton.disabled = false;
+    case 'dataReceived':
+      elements.feedback.textContent = i18next.t('loadingProcess.success');
+      elements.feedback.classList.remove('text-danger', 'text-success');
+      elements.feedback.classList.add('text-info');
       break;
     case 'success':
+      elements.input.disabled = false;
+      elements.submitButton.disabled = false;
       elements.feedback.textContent = i18next.t('rssSuccess');
       elements.feedback.classList.remove('text-danger', 'text-info');
       elements.feedback.classList.add('text-success');
       elements.input.value = '';
       elements.input.focus();
-      break;
-    default:
-      break;
-  }
-};
-
-const loadingProcessRender = (elements, state, processState, i18next) => {
-  switch (processState) {
-    case 'loading':
-      elements.feedback.textContent = i18next.t('loadingProcess.loading');
-      elements.feedback.classList.remove('text-danger', 'text-success');
-      elements.feedback.classList.add('text-info');
-      break;
-    case 'success':
-      elements.feedback.textContent = i18next.t('loadingProcess.success');
-      elements.feedback.classList.remove('text-danger', 'text-success');
-      elements.feedback.classList.add('text-info');
       break;
     case 'error':
       if (state.loadingProcess.error === 'errors.noChannelInRss' || state.loadingProcess.error === 'errors.parsingError') {
@@ -146,9 +135,6 @@ const render = (elements, state, i18next) => (path, value) => {
   switch (path) {
     case 'form.isValid':
       inputRender(elements, state, value, i18next);
-      break;
-    case 'form.status':
-      formRender(elements, value, i18next);
       break;
     case 'loadingProcess.status':
       loadingProcessRender(elements, state, value, i18next);
