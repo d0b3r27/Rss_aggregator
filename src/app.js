@@ -2,6 +2,7 @@
 import * as yup from 'yup';
 import axios from 'axios';
 import i18next from 'i18next';
+import uniqueId from 'lodash/uniqueId.js';
 import resources from './locales/index.js';
 import watch from './view.js';
 import parser from './parser.js';
@@ -29,6 +30,15 @@ const addProxy = (url) => {
   return proxyLink;
 };
 
+const enrichmentOfPosts = (posts, feedId) => {
+  const enrichedPosts = posts.map((post) => ({
+    ...post,
+    feedId,
+    id: uniqueId(),
+  }));
+  return enrichedPosts;
+};
+
 const getRssData = (url, state) => {
   const proxiedUrl = addProxy(url);
   state.loadingProcess.status = 'loading';
@@ -38,9 +48,18 @@ const getRssData = (url, state) => {
       return parser(response.data.contents);
     })
     .then((data) => {
-      data.channel.url = url;
-      state.feeds.push(data.channel);
-      state.posts.push(...data.posts);
+      const { channel, posts } = data;
+      const feedId = uniqueId();
+
+      const enrichedChannel = {
+        ...channel,
+        id: feedId,
+        url,
+      };
+
+      const enrichedPosts = enrichmentOfPosts(posts, feedId);
+      state.feeds.push(enrichedChannel);
+      state.posts.push(...enrichedPosts);
       state.loadingProcess.status = 'success';
     })
     .catch((error) => {
@@ -55,17 +74,21 @@ const getRssData = (url, state) => {
 };
 
 const update = (state, timeout) => {
-  const updateFeeds = state.feeds.map(({ url }) => {
-    const proxiedUrl = addProxy(url);
+  const updateFeeds = state.feeds.map((feed) => {
+    const proxiedUrl = addProxy(feed.url);
+    const linksOfPostsInFeed = state.posts
+      .filter(({ feedId }) => feedId === feed.id)
+      .map((post) => post.link);
+
     return axios.get(proxiedUrl)
       .then((response) => {
         const { posts } = parser(response.data.contents);
-        const existingLinks = state.posts.map((post) => post.link);
-        const newPosts = posts.filter((post) => !existingLinks.includes(post.link));
-        state.posts.push(...newPosts);
+        const newPosts = posts.filter((post) => !linksOfPostsInFeed.includes(post.link));
+        const enrichedNewPosts = enrichmentOfPosts(newPosts, feed.id);
+        state.posts.push(...enrichedNewPosts);
       })
       .catch((error) => {
-        console.log(`Ошибка при обновлении фида: ${url}`, error);
+        console.log(`Ошибка при обновлении фида: ${feed.url}`, error);
       });
   });
 

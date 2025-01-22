@@ -1,13 +1,11 @@
-import uniqueId from 'lodash/uniqueId.js';
-
 export default (content) => {
   const parser = new DOMParser();
   const data = parser.parseFromString(content, 'text/xml');
-  const errorNode = data.querySelector('parsererror');
   const channel = data.querySelector('channel');
   if (!channel) {
     throw (new Error('errors.noChannelInRss'));
   }
+  const errorNode = data.querySelector('parsererror');
   if (errorNode) {
     throw (new Error(('errors.parsingError')));
   }
@@ -15,7 +13,6 @@ export default (content) => {
   const channelDescription = channel.querySelector('description')?.textContent || '';
   const channelLink = channel.querySelector('link')?.textContent || '';
   const items = Array.from(channel.querySelectorAll('item')).map((item) => ({
-    id: uniqueId(),
     title: item.querySelector('title')?.textContent || '',
     description: item.querySelector('description')?.textContent || '',
     pubDate: item.querySelector('pubDate')?.textContent || '',
