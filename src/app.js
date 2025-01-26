@@ -42,7 +42,9 @@ const enrichmentOfPosts = (posts, feedId) => {
 const getRssData = (url, state) => {
   const proxiedUrl = addProxy(url);
   state.loadingProcess.status = 'loading';
-  axios.get(proxiedUrl)
+  axios.get(proxiedUrl, {
+    timeout: 10000,
+  })
     .then((response) => {
       state.loadingProcess.status = 'dataReceived';
       return parser(response.data.contents);
@@ -80,7 +82,9 @@ const update = (state, timeout) => {
       .filter(({ feedId }) => feedId === feed.id)
       .map((post) => post.link);
 
-    return axios.get(proxiedUrl)
+    return axios.get(proxiedUrl, {
+      timeout: 10000,
+    })
       .then((response) => {
         const { posts } = parser(response.data.contents);
         const newPosts = posts.filter((post) => !linksOfPostsInFeed.includes(post.link));

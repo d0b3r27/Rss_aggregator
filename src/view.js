@@ -1,19 +1,35 @@
 /* eslint-disable no-param-reassign */
 import onChange from 'on-change';
 
+const elementTextColor = (element, color) => {
+  switch (color) {
+    case 'green':
+      element.classList.remove('text-danger', 'text-info');
+      element.classList.add('text-success');
+      break;
+    case 'red':
+      element.classList.remove('text-success', 'text-info');
+      element.classList.add('text-danger');
+      break;
+    case 'blue':
+      element.classList.remove('text-danger', 'text-success');
+      element.classList.add('text-info');
+      break;
+    default:
+      break;
+  }
+};
+
 const inputRender = (elements, state, processState, i18next) => {
   switch (processState) {
     case false:
       elements.input.classList.add('is-invalid');
-      elements.feedback.classList.remove('text-success', 'text-info');
-      elements.feedback.classList.add('text-danger');
+      elementTextColor(elements.feedback, 'red');
       elements.feedback.textContent = i18next.t(`${state.form.validationError}`);
       break;
     case true:
       elements.input.classList.remove('is-invalid');
       elements.feedback.textContent = '';
-      elements.feedback.classList.remove('text-danger', 'text-info');
-      elements.feedback.classList.add('text-success');
       break;
     default:
       break;
@@ -26,31 +42,28 @@ const loadingProcessRender = (elements, state, processState, i18next) => {
       elements.submitButton.disabled = true;
       elements.input.disabled = true;
       elements.feedback.textContent = i18next.t('loadingProcess.loading');
-      elements.feedback.classList.remove('text-danger', 'text-success');
-      elements.feedback.classList.add('text-info');
+      elementTextColor(elements.feedback, 'blue');
       break;
     case 'dataReceived':
       elements.feedback.textContent = i18next.t('loadingProcess.success');
-      elements.feedback.classList.remove('text-danger', 'text-success');
-      elements.feedback.classList.add('text-info');
       break;
     case 'success':
       elements.input.disabled = false;
       elements.submitButton.disabled = false;
       elements.feedback.textContent = i18next.t('rssSuccess');
-      elements.feedback.classList.remove('text-danger', 'text-info');
-      elements.feedback.classList.add('text-success');
+      elementTextColor(elements.feedback, 'green');
       elements.input.value = '';
       elements.input.focus();
       break;
     case 'error':
+      elements.input.disabled = false;
+      elements.submitButton.disabled = false;
       if (state.loadingProcess.error === 'errors.noChannelInRss' || state.loadingProcess.error === 'errors.parsingError') {
         elements.feedback.textContent = i18next.t(`${state.loadingProcess.error}`);
       } else {
         elements.feedback.textContent = i18next.t('errors.networkError');
       }
-      elements.feedback.classList.remove('text-success', 'text-info');
-      elements.feedback.classList.add('text-danger');
+      elementTextColor(elements.feedback, 'red');
       break;
     default:
       break;
@@ -66,7 +79,16 @@ const feedsRender = (elements, data, i18next) => {
   data.forEach((feed) => {
     const li = document.createElement('li');
     li.className = 'list-group-item border-0 border-end-0';
-    li.innerHTML = `<h3 class="h6 m-0">${feed.title}</h3><p class="m-0 small text-black-50">${feed.description}</p>`;
+
+    const feedTitle = document.createElement('h3');
+    feedTitle.className = 'h6 m-0';
+    feedTitle.textContent = feed.title;
+
+    const feedDescription = document.createElement('p');
+    feedDescription.classList = 'm-0 small text-black-50';
+    feedDescription.textContent = feed.description;
+
+    li.append(feedTitle, feedDescription);
     ulOfFeeds.prepend(li);
   });
   elements.feeds.innerHTML = '';
@@ -74,13 +96,13 @@ const feedsRender = (elements, data, i18next) => {
   container.append(ulOfFeeds);
 };
 
-const postsRender = (elements, state, data, i18next) => {
+const postsRender = (elements, state, i18next) => {
   const container = document.createElement('div');
   container.className = 'card border-0';
   container.innerHTML = `<div class="card-body"><h2 class="card-title h4">${i18next.t('posts')}</h2></div>`;
   const ulOfPosts = document.createElement('ul');
   ulOfPosts.classList.add('list-group', 'border-0', 'rounded-0');
-  data.forEach((post) => {
+  state.posts.forEach((post) => {
     const li = document.createElement('li');
     li.className = 'list-group-item d-flex justify-content-between align-items-start border-0 border-end-0';
 
@@ -115,13 +137,6 @@ const postsRender = (elements, state, data, i18next) => {
   container.append(ulOfPosts);
 };
 
-const readedPostsRender = (readedPostsId) => {
-  readedPostsId.forEach((id) => {
-    const postTitle = document.querySelector(`a[data-id="${id}"]`);
-    postTitle.className = 'fw-normal';
-  });
-};
-
 const modalRender = (elements, state, previewPostId, i18next) => {
   const currentPost = state.posts.find((post) => post.id === previewPostId);
   elements.modalTitle.textContent = currentPost.title;
@@ -143,13 +158,11 @@ const render = (elements, state, i18next) => (path, value) => {
       feedsRender(elements, value, i18next);
       break;
     case 'posts':
-      postsRender(elements, state, value, i18next);
+    case 'ui.readedPostsId':
+      postsRender(elements, state, i18next);
       break;
     case 'ui.previewPostId':
       modalRender(elements, state, value, i18next);
-      break;
-    case 'ui.readedPostsId':
-      readedPostsRender(value);
       break;
     default:
       break;
