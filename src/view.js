@@ -20,24 +20,19 @@ const elementTextColor = (element, color) => {
   }
 };
 
-const inputRender = (elements, state, processState, i18next) => {
-  switch (processState) {
-    case false:
-      elements.input.classList.add('is-invalid');
-      elementTextColor(elements.feedback, 'red');
-      elements.feedback.textContent = i18next.t(`${state.form.validationError}`);
-      break;
-    case true:
-      elements.input.classList.remove('is-invalid');
-      elements.feedback.textContent = '';
-      break;
-    default:
-      break;
+const inputRender = (elements, state, isValid, i18next) => {
+  if (isValid === false) {
+    elements.input.classList.add('is-invalid');
+    elementTextColor(elements.feedback, 'red');
+    elements.feedback.textContent = i18next.t(`${state.form.error}`);
+  } else {
+    elements.input.classList.remove('is-invalid');
+    elements.feedback.textContent = '';
   }
 };
 
-const loadingProcessRender = (elements, state, processState, i18next) => {
-  switch (processState) {
+const loadingProcessRender = (elements, state, status, i18next) => {
+  switch (status) {
     case 'loading':
       elements.submitButton.disabled = true;
       elements.input.disabled = true;

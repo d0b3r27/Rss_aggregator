@@ -9,6 +9,7 @@ import parser from './parser.js';
 
 const defaultLanguage = 'ru';
 const updateTime = 5000;
+const requestTimeout = 10000;
 
 const validate = (url, urls) => {
   const schema = yup
@@ -43,7 +44,7 @@ const getRssData = (url, state) => {
   const proxiedUrl = addProxy(url);
   state.loadingProcess.status = 'loading';
   axios.get(proxiedUrl, {
-    timeout: 10000,
+    timeout: requestTimeout,
   })
     .then((response) => {
       state.loadingProcess.status = 'dataReceived';
@@ -69,7 +70,7 @@ const getRssData = (url, state) => {
       state.loadingProcess.status = 'error';
     })
     .finally(() => {
-      state.form.validationError = '';
+      state.form.error = '';
       state.loadingProcess.status = 'idle';
       state.loadingProcess.error = '';
     });
@@ -83,7 +84,7 @@ const update = (state, timeout) => {
       .map((post) => post.link);
 
     return axios.get(proxiedUrl, {
-      timeout: 10000,
+      timeout: requestTimeout,
     })
       .then((response) => {
         const { posts } = parser(response.data.contents);
@@ -119,7 +120,7 @@ export default () => {
   const initialState = {
     form: {
       isValid: 'false',
-      validationError: '',
+      error: '',
     },
     loadingProcess: {
       status: 'idle',
@@ -151,7 +152,7 @@ export default () => {
         validate(inputValue, urls)
           .then((error) => {
             if (error) {
-              watchedState.form.validationError = error;
+              watchedState.form.error = error;
               watchedState.form.isValid = false;
               return;
             }
