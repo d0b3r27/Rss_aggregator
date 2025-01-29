@@ -21,13 +21,13 @@ const elementTextColor = (element, color) => {
 };
 
 const inputRender = (elements, state, isValid, i18next) => {
-  if (isValid === false) {
+  if (isValid) {
+    elements.input.classList.remove('is-invalid');
+    elements.feedback.textContent = '';
+  } else {
     elements.input.classList.add('is-invalid');
     elementTextColor(elements.feedback, 'red');
     elements.feedback.textContent = i18next.t(`${state.form.error}`);
-  } else {
-    elements.input.classList.remove('is-invalid');
-    elements.feedback.textContent = '';
   }
 };
 
